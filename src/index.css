@@ -1,0 +1,308 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 33% 98%;
+    --foreground: 160 60% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 160 60% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 60% 14%;
+    --primary: 160 60% 14%;
+    --primary-foreground: 210 33% 98%;
+    --secondary: 140 30% 92%;
+    --secondary-foreground: 160 60% 14%;
+    --muted: 140 30% 92%;
+    --muted-foreground: 160 10% 40%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 160 80% 4%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 140 20% 88%;
+    --input: 140 20% 88%;
+    --ring: 142 71% 45%;
+    --chart-1: 142 71% 45%;
+    --chart-2: 160 60% 14%;
+    --chart-3: 140 30% 60%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.75rem;
+    --font-heading: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 155 60% 3%;
+    --foreground: 140 20% 92%;
+    --card: 155 50% 5%;
+    --card-foreground: 140 20% 92%;
+    --popover: 155 50% 5%;
+    --popover-foreground: 140 20% 92%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 155 60% 3%;
+    --secondary: 155 40% 10%;
+    --secondary-foreground: 140 20% 92%;
+    --muted: 155 40% 10%;
+    --muted-foreground: 140 15% 55%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 155 60% 3%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 155 30% 12%;
+    --input: 155 30% 12%;
+    --ring: 142 71% 45%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+}
+
+html {
+  overscroll-behavior-y: none;
+}
+
+body {
+  overscroll-behavior-y: none;
+}
+
+button,
+a,
+nav,
+[role="button"] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer base {
+  .dark body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Mobile Optimizations */
+@layer utilities {
+  /* Safe Area Insets for Notched Devices */
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  .safe-all {
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
+
+  /* Touch Targets - Minimum 44x44px */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Hardware Acceleration */
+  .hardware-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform;
+  }
+
+  /* Smooth Transitions */
+  .smooth-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* No Select for Interactive Elements */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Tap Highlight Removal */
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Scroll Snap */
+  .scroll-snap-x {
+    scroll-snap-type: x mandatory;
+  }
+
+  .scroll-snap-y {
+    scroll-snap-type: y mandatory;
+  }
+
+  .snap-start {
+    scroll-snap-align: start;
+  }
+
+  .snap-center {
+    scroll-snap-align: center;
+  }
+
+  .snap-end {
+    scroll-snap-align: end;
+  }
+
+  /* Hide Scrollbar */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile-Only Styles */
+  @media (max-width: 768px) {
+    .mobile-padding {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    .mobile-gap {
+      gap: 12px;
+    }
+
+    .mobile-text-sm {
+      font-size: 14px;
+    }
+
+    .mobile-text-xs {
+      font-size: 12px;
+    }
+  }
+
+  /* Touch Device Styles */
+  @media (hover: none) and (pointer: coarse) {
+    .hover\:opacity-80:hover {
+      opacity: 0.8;
+    }
+
+    /* Remove hover effects on touch devices */
+    .touch-no-hover:hover {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Landscape Orientation */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .landscape-compact {
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+  }
+
+  /* iOS-specific fixes */
+  @supports (-webkit-touch-callout: none) {
+    .ios-fix {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  /* Android-specific fixes */
+  @supports not (-webkit-touch-callout: none) {
+    .android-fix {
+      -webkit-overflow-scrolling: auto;
+    }
+  }
+}
+
+/* Global Mobile Styles */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+[role="button"],
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent text selection on interactive elements */
+button,
+a,
+nav,
+[role="button"] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Optimize images for mobile */
+img {
+  max-width: 100%;
+  height: auto;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* Fix for iOS 100vh issue */
+@supports (-webkit-touch-callout: none) {
+  .ios-100vh {
+    height: -webkit-fill-available;
+  }
+}

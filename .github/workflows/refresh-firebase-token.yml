@@ -1,0 +1,54 @@
+name: Refresh Firebase Access Token
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  refresh-token:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: '587.0.0'
+          project_id: bennycare-app
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://supabase.com/install.sh | bash
+          echo "$HOME/.supabase/bin" >> $GITHUB_PATH
+
+      - name: Generate Firebase Access Token
+        id: generate-token
+        run: |
+          TOKEN=$(gcloud auth print-access-token)
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+          echo "Token generated successfully"
+
+      - name: Update Supabase Secrets
+        run: |
+          supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          supabase secrets set FIREBASE_ACCESS_TOKEN=${{ steps.generate-token.outputs.token }} --project-ref chlfmkeplogbkornbwqc
+          echo "Supabase secrets updated successfully"
+
+      - name: Log success
+        if: success()
+        run: |
+          echo "Firebase access token refreshed successfully at $(date)"
+
+      - name: Log failure
+        if: failure()
+        run: |
+          echo "Failed to refresh Firebase access token at $(date)"

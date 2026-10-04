@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>No Internet Connection - BennyCare</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #051510 0%, #071f15 50%, #0a3d2e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      text-align: center;
+      color: white;
+      max-width: 400px;
+    }
+    .icon {
+      width: 140px;
+      height: 140px;
+      margin: 0 auto 30px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+      }
+    }
+    .icon svg {
+      width: 70px;
+      height: 70px;
+      color: #22C55E;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .subtext {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 32px;
+    }
+    .retry-btn {
+      background: #22C55E;
+      color: #051510;
+      border: none;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+    }
+    .retry-btn:hover {
+      background: #16a34a;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+    }
+    .retry-btn:active {
+      transform: translateY(0);
+    }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.3;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5h12a4.5 4.5 0 004.5-4.5M8.25 6h7.5M8.25 6v9m7.5-9v9m0-6.75A3.75 3.75 0 0012 5.25 3.75 3.75 0 008.25 9v.75" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 21a6 6 0 01-6-6 6 6 0 00-6 6m12 0v-3.375c0-.621-.503-1.125-1.125-1.125h-1.5c-.622 0-1.125.504-1.125 1.125V21m3.75 0H7.5m12 0h-1.5" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M1 1l22 22" stroke-width="2" />
+      </svg>
+    </div>
+    <h1>No Internet Connection</h1>
+    <p>You appear to be offline.</p>
+    <p class="subtext">Please check your internet connection and try again.</p>
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      <span>Disconnected</span>
+    </div>
+    <button class="retry-btn" onclick="window.location.reload()">Retry Connection</button>
+  </div>
+</body>
+</html>
