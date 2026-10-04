@@ -25,11 +25,6 @@ jobs:
           version: '587.0.0'
           project_id: bennycare-app
 
-      - name: Install Supabase CLI
-        run: |
-          npm install -g supabase
-          echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
-
       - name: Generate Firebase Access Token
         id: generate-token
         run: |
@@ -37,10 +32,17 @@ jobs:
           echo "token=$TOKEN" >> $GITHUB_OUTPUT
           echo "Token generated successfully"
 
-      - name: Update Supabase Secrets
+      - name: Update Supabase Secrets via API
         run: |
-          supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          supabase secrets set FIREBASE_ACCESS_TOKEN=${{ steps.generate-token.outputs.token }} --project-ref chlfmkeplogbkornbwqc
+          curl -X PATCH \
+            'https://api.supabase.com/v1/projects/chlfmkeplogbkornbwqc/secrets' \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "secrets": {
+                "FIREBASE_ACCESS_TOKEN": "${{ steps.generate-token.outputs.token }}"
+              }
+            }'
           echo "Supabase secrets updated successfully"
 
       - name: Log success
