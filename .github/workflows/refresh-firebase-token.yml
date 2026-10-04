@@ -14,20 +14,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
         with:
           version: '587.0.0'
           project_id: bennycare-app
 
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-
       - name: Install Supabase CLI
         run: |
           npm install -g supabase
+          echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
 
       - name: Generate Firebase Access Token
         id: generate-token
