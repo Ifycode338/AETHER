@@ -5,6 +5,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { ArrowLeft, Minus, Plus, ShoppingBag, Star, Shield, Truck, RefreshCw, Heart, Video as VideoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewList from "@/components/ReviewList";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -21,7 +23,7 @@ export default function ProductDetail() {
   const [activeTab, setActiveTab] = useState('description');
   const [reviews, setReviews] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const [existingReview, setExistingReview] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [zoomLevel, setZoomLevel] = useState({ x: 50, y: 50 });
   const [showZoom, setShowZoom] = useState(false);
@@ -38,20 +40,81 @@ export default function ProductDetail() {
       setLoading(false);
     };
     loadProduct();
+
+    // Set up realtime subscription for product rating updates
+    const channel = supabase
+      .channel(`product:${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'products',
+          filter: `id=eq.${id}`
+        },
+        (payload) => {
+          setProduct(payload.new); // Update product data when rating changes
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   useEffect(() => {
     const loadReviews = async () => {
+      // Load reviews
       const { data, error } = await supabase
         .from('reviews')
         .select('*')
         .eq('product_id', id)
-        .order('created_date', { ascending: false });
+        .order('created_at', { ascending: false });
       if (error) console.error('Error loading reviews:', error);
       else setReviews(data || []);
+
+      // Check if user has already reviewed
+      if (user) {
+        const { data: userReview } = await supabase
+          .from('reviews')
+          .select('*')
+          .eq('product_id', id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (userReview) {
+          setExistingReview(userReview);
+        }
+      }
     };
     loadReviews();
-  }, [id]);
+
+    // Set up realtime subscription for reviews
+    const channel = supabase
+      .channel(`product-reviews:${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reviews',
+          filter: `product_id=eq.${id}`
+        },
+        () => {
+          loadReviews(); // Reload reviews when changes occur
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('ProductDetail: Realtime subscribed to reviews');
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, user]);
 
   useEffect(() => {
     if (!user || !id) return;
@@ -170,49 +233,11 @@ export default function ProductDetail() {
     }
   };
 
-  const handleSubmitReview = async () => {
-    if (!user) {
-      toast.error("Please login to submit a review");
-      navigate("/login");
-      return;
-    }
-    if (!reviewForm.comment.trim()) {
-      toast.error("Please write a review");
-      return;
-    }
-    
-    try {
-      const { error } = await supabase.from('reviews').insert({
-        product_id: id,
-        user_id: user.id,
-        user_name: user.full_name || user.email,
-        rating: reviewForm.rating,
-        comment: reviewForm.comment,
-      });
-      
-      if (error) throw error;
-      
-      toast.success("Review submitted successfully!");
-      setShowReviewForm(false);
-      setReviewForm({ rating: 5, comment: '' });
-      
-      // Reload reviews
-      const { data } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('product_id', id)
-        .order('created_date', { ascending: false });
-      setReviews(data || []);
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      toast.error("Failed to submit review");
-    }
-  };
-
-  const calculateAverageRating = () => {
-    if (reviews.length === 0) return 0;
-    const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
-    return (sum / reviews.length).toFixed(1);
+  const handleReviewSuccess = () => {
+    setShowReviewForm(false);
+    setExistingReview(null);
+    // Reload reviews by triggering the useEffect
+    setReviews([]);
   };
 
   if (loading) {
@@ -240,7 +265,6 @@ export default function ProductDetail() {
   }
 
   const categoryLabel = product.category === "supplements" ? "Supplement" : "Oral Care";
-  const averageRating = calculateAverageRating();
 
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
@@ -363,17 +387,17 @@ export default function ProductDetail() {
           <h1 className="font-heading font-bold text-3xl md:text-4xl text-[#0A3D2E] mt-2 mb-2">{product.name}</h1>
           
           <div className="flex items-center gap-3 mb-4">
-            {reviews.length > 0 ? (
+            {(product.average_rating > 0 || product.review_count > 0) ? (
               <>
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
                     <Star 
                       key={i} 
-                      className={`w-4 h-4 ${i < Math.round(Number(averageRating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                      className={`w-4 h-4 ${i < Math.round(Number(product.average_rating || 0)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
                     />
                   ))}
                 </div>
-                <span className="text-sm text-[#0A3D2E]/60">({averageRating}) • {reviews.length} reviews</span>
+                <span className="text-sm text-[#0A3D2E]/60">({product.average_rating || 0}) • {product.review_count || 0} reviews</span>
               </>
             ) : (
               <span className="text-sm text-[#0A3D2E]/60">No reviews yet</span>
@@ -490,104 +514,40 @@ export default function ProductDetail() {
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="text-4xl font-bold text-[#0A3D2E]">{averageRating}</div>
+                    <div className="text-4xl font-bold text-[#0A3D2E]">{product.average_rating || 0}</div>
                     <div>
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i} 
-                            className={`w-4 h-4 ${i < Math.round(Number(averageRating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${i < Math.round(Number(product.average_rating || 0)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
                           />
                         ))}
                       </div>
-                      <p className="text-sm text-[#0A3D2E]/60">{reviews.length} reviews</p>
+                      <p className="text-sm text-[#0A3D2E]/60">{product.review_count || 0} reviews</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setShowReviewForm(!showReviewForm)}
-                    className="w-full sm:w-auto py-3 px-6 rounded-xl bg-[#22C55E] text-[#051510] font-semibold text-sm hover:bg-[#16a34a] transition-colors"
-                  >
-                    {showReviewForm ? 'Cancel' : 'Write a Review'}
-                  </button>
-                </div>
-                
-                {showReviewForm && (
-                  <div className="p-6 rounded-2xl bg-gradient-to-br from-[#E2F1E7]/50 to-[#E2F1E7]/30 border border-[#E2F1E7] space-y-5">
-                    <div>
-                      <label className="block text-sm font-semibold text-[#0A3D2E] mb-3">Your Rating</label>
-                      <div className="flex gap-3">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                            className="focus:outline-none transition-transform hover:scale-110"
-                          >
-                            <Star 
-                              className={`w-8 h-8 ${star <= reviewForm.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-[#0A3D2E] mb-3">Your Review</label>
-                      <textarea
-                        value={reviewForm.comment}
-                        onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                        placeholder="Share your experience with this product. What did you like or dislike?"
-                        className="w-full px-4 py-3 rounded-xl border border-[#E2F1E7] bg-white text-sm text-[#0A3D2E] focus:outline-none focus:ring-2 focus:ring-[#22C55E] resize-none"
-                        rows={4}
-                      />
-                    </div>
+                  {user && (
                     <button
-                      onClick={handleSubmitReview}
-                      className="w-full py-3 rounded-xl bg-[#22C55E] text-[#051510] font-semibold text-sm hover:bg-[#16a34a] transition-colors"
+                      onClick={() => setShowReviewForm(!showReviewForm)}
+                      className="w-full sm:w-auto py-3 px-6 rounded-xl bg-[#22C55E] text-[#051510] font-semibold text-sm hover:bg-[#16a34a] transition-colors"
                     >
-                      Submit Review
+                      {showReviewForm ? 'Cancel' : existingReview ? 'Update Review' : 'Write a Review'}
                     </button>
-                  </div>
+                  )}
+                </div>
+
+                {showReviewForm && user && (
+                  <ReviewForm
+                    productId={id}
+                    userId={user.id}
+                    existingReview={existingReview}
+                    onSuccess={handleReviewSuccess}
+                    onCancel={() => setShowReviewForm(false)}
+                  />
                 )}
-                
-                {reviews.length === 0 ? (
-                  <div className="text-center py-12 bg-[#E2F1E7]/20 rounded-2xl border-2 border-dashed border-[#E2F1E7]">
-                    <Star className="w-12 h-12 text-[#E2F1E7] mx-auto mb-4" />
-                    <p className="text-[#0A3D2E]/50 mb-2">No reviews yet</p>
-                    <p className="text-sm text-[#0A3D2E]/40">Be the first to share your experience with this product!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="p-5 rounded-2xl bg-white border border-[#E2F1E7] shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#22C55E] to-[#16a34a] flex items-center justify-center text-white font-semibold text-sm shadow-md">
-                              {review.user_name?.charAt(0).toUpperCase() || 'U'}
-                            </div>
-                            <div>
-                              <span className="font-semibold text-sm text-[#0A3D2E]">{review.user_name || 'User'}</span>
-                              <div className="flex items-center gap-1 mt-1">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star 
-                                    key={i} 
-                                    className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <span className="text-xs text-[#0A3D2E]/40">
-                            {new Date(review.created_date).toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'short', 
-                              day: 'numeric' 
-                            })}
-                          </span>
-                        </div>
-                        <p className="text-sm text-[#0A3D2E]/70 leading-relaxed">{review.comment}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+
+                <ReviewList productId={id} userId={user?.id} />
               </div>
             )}
           </div>

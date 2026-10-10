@@ -4,6 +4,7 @@ import { Plus, Video as VideoIcon, Heart } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
 import { toast } from "sonner";
+import RatingStars from "@/components/RatingStars";
 
 export default function ProductCard({ product, onAddToCart }) {
   const { user } = useAuth();
@@ -99,6 +100,17 @@ export default function ProductCard({ product, onAddToCart }) {
           </h3>
           {product.ingredients && (
             <p className="text-xs text-[#0A3D2E]/40 dark:text-white/60 mb-2 line-clamp-1">{product.ingredients}</p>
+          )}
+          {/* Rating Display */}
+          {(product.average_rating > 0 || product.review_count > 0) && (
+            <div className="mb-2">
+              <RatingStars 
+                rating={product.average_rating || 0} 
+                size="sm" 
+                showCount={true} 
+                count={product.review_count || 0} 
+              />
+            </div>
           )}
           <div className="flex items-center gap-2 mb-1">
             <p className="font-heading font-bold text-[#0A3D2E] dark:text-white">₦{product.price?.toFixed(2)}</p>

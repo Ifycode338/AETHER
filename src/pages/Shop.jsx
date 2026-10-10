@@ -68,6 +68,8 @@ export default function Shop() {
         return b.price - a.price;
       case 'name':
         return a.name.localeCompare(b.name);
+      case 'rating':
+        return (b.average_rating || 0) - (a.average_rating || 0);
       case 'newest':
       default:
         return new Date(b.created_date) - new Date(a.created_date);
@@ -181,6 +183,7 @@ export default function Shop() {
                     <option value="price-low">Price: Low to High</option>
                     <option value="price-high">Price: High to Low</option>
                     <option value="name">Name: A to Z</option>
+                    <option value="rating">Highest Rated</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0A3D2E]/40 dark:text-white/40 pointer-events-none" />
                 </div>
