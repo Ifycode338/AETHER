@@ -63,7 +63,7 @@ export default defineConfig({
     }),
     react(),
     VitePWA({
-      registerType: 'custom',
+      registerType: 'prompt',
       includeAssets: ['offline.html', 'firebase-messaging-sw.js'],
       manifest: {
         name: 'BennyCare - AETHER',
