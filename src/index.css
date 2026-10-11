@@ -47,17 +47,17 @@
 
   .dark {
     --background: 155 60% 3%;
-    --foreground: 140 20% 92%;
+    --foreground: 140 20% 95%;
     --card: 155 50% 5%;
-    --card-foreground: 140 20% 92%;
+    --card-foreground: 140 20% 95%;
     --popover: 155 50% 5%;
-    --popover-foreground: 140 20% 92%;
+    --popover-foreground: 140 20% 95%;
     --primary: 142 71% 45%;
     --primary-foreground: 155 60% 3%;
     --secondary: 155 40% 10%;
-    --secondary-foreground: 140 20% 92%;
+    --secondary-foreground: 140 20% 95%;
     --muted: 155 40% 10%;
-    --muted-foreground: 140 15% 55%;
+    --muted-foreground: 140 15% 75%;
     --accent: 142 71% 45%;
     --accent-foreground: 155 60% 3%;
     --destructive: 0 62.8% 30.6%;
@@ -298,6 +298,17 @@ img {
   height: auto;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
+  content-visibility: auto;
+}
+
+/* Lazy loading for images */
+img[loading="lazy"] {
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
+}
+
+img[loading="lazy"].loaded {
+  opacity: 1;
 }
 
 /* Fix for iOS 100vh issue */

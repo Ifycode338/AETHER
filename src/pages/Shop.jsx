@@ -86,12 +86,12 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen">
-      <div className="bg-[#0A3D2E] dark:bg-[#0A3D2E] py-16 lg:py-24">
+      <div className="bg-[#0A3D2E] dark:bg-[#051510] py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <h1 className="font-heading font-bold text-3xl md:text-5xl text-white mb-3">
             {category === "supplements" ? "Supplements" : category === "oral_care" ? "Oral Care" : "All Products"}
           </h1>
-          <p className="text-white/70 dark:text-white/60 text-sm">
+          <p className="text-white/70 dark:text-white/80 text-sm">
             Clinical-grade wellness, delivered to your door.
           </p>
         </div>

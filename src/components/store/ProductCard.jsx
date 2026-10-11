@@ -68,12 +68,14 @@ export default function ProductCard({ product, onAddToCart }) {
   return (
     <div className="group relative">
       <Link to={`/product/${product.id}`} className="block">
-        <div className="relative overflow-hidden rounded-2xl bg-[#E2F1E7]/50 dark:bg-white/10 aspect-square mb-4">
+        <div className="relative overflow-hidden rounded-2xl bg-[#E2F1E7]/50 dark:bg-white/10 aspect-square mb-4 shadow-sm group-hover:shadow-lg transition-all duration-300">
           {product.images && product.images.length > 0 ? (
             <img
               src={product.images[0]}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+              onLoad={(e) => e.target.classList.add('loaded')}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[#0A3D2E]/20 dark:text-white/20">
@@ -81,13 +83,13 @@ export default function ProductCard({ product, onAddToCart }) {
             </div>
           )}
           <div className="absolute top-3 left-3">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#0A3D2E]/60 dark:text-white/80 bg-white/80 dark:bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#0A3D2E]/60 dark:text-white/80 bg-white/90 dark:bg-black/70 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm">
               {categoryLabel}
             </span>
           </div>
           {product.video_url && (
             <div className="absolute top-3 right-3">
-              <div className="w-8 h-8 rounded-full bg-[#22C55E] text-white flex items-center justify-center shadow-lg">
+              <div className="w-8 h-8 rounded-full bg-[#22C55E] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
                 <VideoIcon className="w-4 h-4" />
               </div>
             </div>
@@ -95,7 +97,7 @@ export default function ProductCard({ product, onAddToCart }) {
         </div>
 
         <div className="px-1">
-          <h3 className="font-heading font-semibold text-[#0A3D2E] dark:text-white text-sm mb-1 group-hover:text-[#22C55E] transition-colors">
+          <h3 className="font-heading font-semibold text-[#0A3D2E] dark:text-white text-sm mb-1 group-hover:text-[#22C55E] transition-colors duration-200">
             {product.name}
           </h3>
           {product.ingredients && (
@@ -104,22 +106,22 @@ export default function ProductCard({ product, onAddToCart }) {
           {/* Rating Display */}
           {(product.average_rating > 0 || product.review_count > 0) && (
             <div className="mb-2">
-              <RatingStars 
-                rating={product.average_rating || 0} 
-                size="sm" 
-                showCount={true} 
-                count={product.review_count || 0} 
+              <RatingStars
+                rating={product.average_rating || 0}
+                size="sm"
+                showCount={true}
+                count={product.review_count || 0}
               />
             </div>
           )}
           <div className="flex items-center gap-2 mb-1">
             <p className="font-heading font-bold text-[#0A3D2E] dark:text-white">₦{product.price?.toFixed(2)}</p>
             {product.stock > 10 ? (
-              <span className="text-xs text-[#22C55E] dark:text-green-400">In Stock</span>
+              <span className="text-xs text-[#22C55E] dark:text-green-400 font-medium">In Stock</span>
             ) : product.stock > 0 ? (
-              <span className="text-xs text-orange-500 dark:text-orange-400">Only {product.stock} left</span>
+              <span className="text-xs text-orange-500 dark:text-orange-400 font-medium">Only {product.stock} left</span>
             ) : (
-              <span className="text-xs text-red-500 dark:text-red-400">Out of Stock</span>
+              <span className="text-xs text-red-500 dark:text-red-400 font-medium">Out of Stock</span>
             )}
           </div>
         </div>
@@ -127,16 +129,16 @@ export default function ProductCard({ product, onAddToCart }) {
 
       <button
         onClick={(e) => { e.preventDefault(); onAddToCart(product); }}
-        className="absolute bottom-16 right-2 w-9 h-9 rounded-full bg-[#22C55E] text-[#051510] flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-[#16a34a] focus:ring-2 focus:ring-[#22C55E] focus:ring-offset-2"
+        className="absolute bottom-16 right-2 w-9 h-9 rounded-full bg-[#22C55E] text-[#051510] flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out hover:bg-[#16a34a] hover:scale-110 focus:ring-2 focus:ring-[#22C55E] focus:ring-offset-2 shadow-lg"
         aria-label={`Add ${product.name} to cart`}
       >
         <Plus className="w-4 h-4" />
       </button>
-      
+
       <button
         onClick={handleWishlistToggle}
         disabled={loadingWishlist}
-        className="absolute bottom-16 right-14 w-9 h-9 rounded-full bg-white dark:bg-[#071f15] text-[#0A3D2E] dark:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-gray-100 dark:hover:bg-[#22C55E]/10 focus:ring-2 focus:ring-[#22C55E] focus:ring-offset-2 disabled:opacity-50"
+        className="absolute bottom-16 right-14 w-9 h-9 rounded-full bg-white dark:bg-[#071f15] text-[#0A3D2E] dark:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out hover:bg-gray-100 dark:hover:bg-[#22C55E]/10 hover:scale-110 focus:ring-2 focus:ring-[#22C55E] focus:ring-offset-2 disabled:opacity-50 shadow-lg"
         aria-label={isWishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
       >
         <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />

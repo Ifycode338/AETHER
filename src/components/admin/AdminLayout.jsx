@@ -51,8 +51,8 @@ export default function AdminLayout() {
                 </span>
               )}
             </button>
-            <button className="lg:hidden p-1" onClick={() => setSidebarOpen(false)}>
-              <X className="w-5 h-5 text-white/50" />
+            <button className="lg:hidden p-2 hover:bg-white/10 rounded-full transition-colors" onClick={() => setSidebarOpen(false)}>
+              <X className="w-6 h-6 text-white/50" />
             </button>
           </div>
         </div>
@@ -87,11 +87,11 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen bg-[#051510]">
         <header className="h-14 sm:h-16 bg-[#071f15] border-b border-[#22C55E]/10 flex items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center">
-            <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 lg:hidden">
-              <Menu className="w-5 h-5 text-white/70" />
+            <button onClick={() => setSidebarOpen(true)} className="p-3 -ml-2 lg:hidden hover:bg-white/10 rounded-full transition-colors">
+              <Menu className="w-6 h-6 text-white/70" />
             </button>
             <span className="font-heading font-semibold text-white ml-3 text-sm sm:text-base">{pageTitle}</span>
           </div>
@@ -110,10 +110,12 @@ export default function AdminLayout() {
           </button>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          <Outlet />
+          <div className="max-w-7xl mx-auto w-full">
+            <Outlet />
+          </div>
         </main>
       </div>
-      
+
       <NotificationCenter isOpen={notificationOpen} onClose={() => setNotificationOpen(false)} />
     </div>
   );

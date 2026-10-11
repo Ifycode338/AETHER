@@ -282,17 +282,22 @@ export default function ProductDetail() {
           >
             {product.images && product.images.length > 0 ? (
               <>
-                <img 
-                  src={product.images[selectedImage]} 
-                  alt={`${product.name} - Image ${selectedImage + 1}`} 
+                <img
+                  src={product.images[selectedImage]}
+                  alt={`${product.name} - Image ${selectedImage + 1}`}
+                  loading="lazy"
                   className={`w-full h-full object-cover transition-all duration-300 ${
                     isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
                   } ${showZoom ? 'scale-150' : ''}`}
-                  style={{ 
+                  style={{
                     imageRendering: 'auto',
-                    transformOrigin: showZoom && typeof zoomLevel === 'object' 
-                      ? `${zoomLevel.x}% ${zoomLevel.y}%` 
+                    transformOrigin: showZoom && typeof zoomLevel === 'object'
+                      ? `${zoomLevel.x}% ${zoomLevel.y}%`
                       : 'center'
+                  }}
+                  onLoad={(e) => {
+                    setIsTransitioning(false);
+                    e.target.classList.add('loaded');
                   }}
                 />
                 {showZoom && (
@@ -341,13 +346,15 @@ export default function ProductDetail() {
                       : 'border-transparent hover:border-[#22C55E]/30'
                   }`}
                 >
-                  <img 
-                    src={url} 
-                    alt={`${product.name} - Thumbnail ${index + 1}`} 
+                  <img
+                    src={url}
+                    alt={`${product.name} - Thumbnail ${index + 1}`}
+                    loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-300"
-                    style={{ 
+                    style={{
                       imageRendering: 'auto'
                     }}
+                    onLoad={(e) => e.target.classList.add('loaded')}
                   />
                 </button>
               ))}
@@ -373,45 +380,45 @@ export default function ProductDetail() {
         <div className="py-4">
           <div className="flex items-start justify-between mb-4">
             <span className="text-xs font-semibold uppercase tracking-widest text-[#22C55E]">{categoryLabel}</span>
-            <button 
+            <button
               onClick={handleWishlist}
-              className="p-2 rounded-full hover:bg-[#E2F1E7] transition-colors"
+              className="p-2 rounded-full hover:bg-[#E2F1E7] dark:hover:bg-white/10 transition-colors"
               title="Add to wishlist"
             >
-              <Heart 
-                className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-[#0A3D2E]/40'}`} 
+              <Heart
+                className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-[#0A3D2E]/40 dark:text-white/40'}`}
               />
             </button>
           </div>
-          
-          <h1 className="font-heading font-bold text-3xl md:text-4xl text-[#0A3D2E] mt-2 mb-2">{product.name}</h1>
-          
+
+          <h1 className="font-heading font-bold text-3xl md:text-4xl text-[#0A3D2E] dark:text-white mt-2 mb-2">{product.name}</h1>
+
           <div className="flex items-center gap-3 mb-4">
             {(product.average_rating > 0 || product.review_count > 0) ? (
               <>
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`w-4 h-4 ${i < Math.round(Number(product.average_rating || 0)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${i < Math.round(Number(product.average_rating || 0)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
                     />
                   ))}
                 </div>
-                <span className="text-sm text-[#0A3D2E]/60">({product.average_rating || 0}) • {product.review_count || 0} reviews</span>
+                <span className="text-sm text-[#0A3D2E]/60 dark:text-white/70">({product.average_rating || 0}) • {product.review_count || 0} reviews</span>
               </>
             ) : (
-              <span className="text-sm text-[#0A3D2E]/60">No reviews yet</span>
+              <span className="text-sm text-[#0A3D2E]/60 dark:text-white/70">No reviews yet</span>
             )}
           </div>
-          
-          <p className="font-heading font-bold text-3xl text-[#0A3D2E] mb-6">₦{product.price?.toFixed(2)}</p>
-          
+
+          <p className="font-heading font-bold text-3xl text-[#0A3D2E] dark:text-white mb-6">₦{product.price?.toFixed(2)}</p>
+
           {/* Stock display like Amazon */}
-          <div className="mb-6 p-4 rounded-xl bg-[#E2F1E7]/30 border border-[#E2F1E7]">
+          <div className="mb-6 p-4 rounded-xl bg-[#E2F1E7]/30 dark:bg-white/5 border border-[#E2F1E7] dark:border-white/10">
             {product.stock > 10 ? (
               <div className="flex items-center gap-2">
                 <span className="text-[#22C55E] font-semibold text-sm">✓ In Stock</span>
-                <span className="text-sm text-[#0A3D2E]/60">({product.stock} available)</span>
+                <span className="text-sm text-[#0A3D2E]/60 dark:text-white/70">({product.stock} available)</span>
               </div>
             ) : product.stock > 0 ? (
               <div className="flex items-center gap-2">
@@ -427,29 +434,29 @@ export default function ProductDetail() {
 
           {/* Trust badges */}
           <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="flex flex-col items-center p-3 rounded-xl bg-[#E2F1E7]/30 text-center">
+            <div className="flex flex-col items-center p-3 rounded-xl bg-[#E2F1E7]/30 dark:bg-white/5 text-center">
               <Shield className="w-5 h-5 text-[#22C55E] mb-1" />
-              <span className="text-xs text-[#0A3D2E]/70">Quality Assured</span>
+              <span className="text-xs text-[#0A3D2E]/70 dark:text-white/80">Quality Assured</span>
             </div>
-            <div className="flex flex-col items-center p-3 rounded-xl bg-[#E2F1E7]/30 text-center">
+            <div className="flex flex-col items-center p-3 rounded-xl bg-[#E2F1E7]/30 dark:bg-white/5 text-center">
               <Truck className="w-5 h-5 text-[#22C55E] mb-1" />
-              <span className="text-xs text-[#0A3D2E]/70">Fast Delivery</span>
+              <span className="text-xs text-[#0A3D2E]/70 dark:text-white/80">Fast Delivery</span>
             </div>
-            <div className="flex flex-col items-center p-3 rounded-xl bg-[#E2F1E7]/30 text-center">
+            <div className="flex flex-col items-center p-3 rounded-xl bg-[#E2F1E7]/30 dark:bg-white/5 text-center">
               <RefreshCw className="w-5 h-5 text-[#22C55E] mb-1" />
-              <span className="text-xs text-[#0A3D2E]/70">Easy Returns</span>
+              <span className="text-xs text-[#0A3D2E]/70 dark:text-white/80">Easy Returns</span>
             </div>
           </div>
 
           {/* Product information tabs */}
           <div className="mb-8">
-            <div className="flex gap-2 sm:gap-4 border-b border-[#E2F1E7] mb-6 overflow-x-auto">
+            <div className="flex gap-2 sm:gap-4 border-b border-[#E2F1E7] dark:border-white/10 mb-6 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('description')}
                 className={`pb-3 px-2 text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'description' 
-                    ? 'text-[#22C55E] border-b-2 border-[#22C55E]' 
-                    : 'text-[#0A3D2E]/50 hover:text-[#0A3D2E]'
+                  activeTab === 'description'
+                    ? 'text-[#22C55E] border-b-2 border-[#22C55E]'
+                    : 'text-[#0A3D2E]/50 dark:text-white/60 hover:text-[#0A3D2E] dark:hover:text-white'
                 }`}
               >
                 Description
@@ -458,9 +465,9 @@ export default function ProductDetail() {
                 <button
                   onClick={() => setActiveTab('ingredients')}
                   className={`pb-3 px-2 text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeTab === 'ingredients' 
-                      ? 'text-[#22C55E] border-b-2 border-[#22C55E]' 
-                      : 'text-[#0A3D2E]/50 hover:text-[#0A3D2E]'
+                    activeTab === 'ingredients'
+                      ? 'text-[#22C55E] border-b-2 border-[#22C55E]'
+                      : 'text-[#0A3D2E]/50 dark:text-white/60 hover:text-[#0A3D2E] dark:hover:text-white'
                   }`}
                 >
                   Ingredients
@@ -470,9 +477,9 @@ export default function ProductDetail() {
                 <button
                   onClick={() => setActiveTab('benefits')}
                   className={`pb-3 px-2 text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeTab === 'benefits' 
-                      ? 'text-[#22C55E] border-b-2 border-[#22C55E]' 
-                      : 'text-[#0A3D2E]/50 hover:text-[#0A3D2E]'
+                    activeTab === 'benefits'
+                      ? 'text-[#22C55E] border-b-2 border-[#22C55E]'
+                      : 'text-[#0A3D2E]/50 dark:text-white/60 hover:text-[#0A3D2E] dark:hover:text-white'
                   }`}
                 >
                   Benefits
@@ -481,9 +488,9 @@ export default function ProductDetail() {
               <button
                 onClick={() => setActiveTab('reviews')}
                 className={`pb-3 px-2 text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'reviews' 
-                    ? 'text-[#22C55E] border-b-2 border-[#22C55E]' 
-                    : 'text-[#0A3D2E]/50 hover:text-[#0A3D2E]'
+                  activeTab === 'reviews'
+                    ? 'text-[#22C55E] border-b-2 border-[#22C55E]'
+                    : 'text-[#0A3D2E]/50 dark:text-white/60 hover:text-[#0A3D2E] dark:hover:text-white'
                 }`}
               >
                 Reviews ({reviews.length})
@@ -492,39 +499,39 @@ export default function ProductDetail() {
             
             {activeTab === 'description' && product.description && (
               <div className="prose prose-sm max-w-none">
-                <p className="text-[#0A3D2E]/70 leading-relaxed text-base">{product.description}</p>
+                <p className="text-[#0A3D2E]/70 dark:text-white/80 leading-relaxed text-base">{product.description}</p>
               </div>
             )}
-            
+
             {activeTab === 'ingredients' && product.ingredients && (
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-[#E2F1E7]/50 to-[#E2F1E7]/30 border border-[#E2F1E7]">
-                <h3 className="text-sm font-semibold uppercase tracking-widest text-[#0A3D2E]/40 mb-4">Ingredients</h3>
-                <div className="text-[#0A3D2E]/70 leading-relaxed text-base whitespace-pre-line">{product.ingredients}</div>
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-[#E2F1E7]/50 to-[#E2F1E7]/30 dark:from-white/5 dark:to-white/10 border border-[#E2F1E7] dark:border-white/10">
+                <h3 className="text-sm font-semibold uppercase tracking-widest text-[#0A3D2E]/40 dark:text-white/60 mb-4">Ingredients</h3>
+                <div className="text-[#0A3D2E]/70 dark:text-white/80 leading-relaxed text-base whitespace-pre-line">{product.ingredients}</div>
               </div>
             )}
-            
+
             {activeTab === 'benefits' && product.benefits && (
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-[#22C55E]/10 to-[#22C55E]/5 border border-[#22C55E]/20">
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-[#22C55E]/10 to-[#22C55E]/5 dark:from-[#22C55E]/10 dark:to-[#22C55E]/5 border border-[#22C55E]/20 dark:border-[#22C55E]/20">
                 <h3 className="text-sm font-semibold uppercase tracking-widest text-[#22C55E] mb-4">Clinical Benefits</h3>
-                <div className="text-[#0A3D2E]/70 leading-relaxed text-base whitespace-pre-line">{product.benefits}</div>
+                <div className="text-[#0A3D2E]/70 dark:text-white/80 leading-relaxed text-base whitespace-pre-line">{product.benefits}</div>
               </div>
             )}
-            
+
             {activeTab === 'reviews' && (
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="text-4xl font-bold text-[#0A3D2E]">{product.average_rating || 0}</div>
+                    <div className="text-4xl font-bold text-[#0A3D2E] dark:text-white">{product.average_rating || 0}</div>
                     <div>
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-4 h-4 ${i < Math.round(Number(product.average_rating || 0)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                            className={`w-4 h-4 ${i < Math.round(Number(product.average_rating || 0)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
                           />
                         ))}
                       </div>
-                      <p className="text-sm text-[#0A3D2E]/60">{product.review_count || 0} reviews</p>
+                      <p className="text-sm text-[#0A3D2E]/60 dark:text-white/70">{product.review_count || 0} reviews</p>
                     </div>
                   </div>
                   {user && (
@@ -552,19 +559,19 @@ export default function ProductDetail() {
             )}
           </div>
 
-          <div className="border-t border-[#E2F1E7] pt-8 mt-8">
+          <div className="border-t border-[#E2F1E7] dark:border-white/10 pt-8 mt-8">
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-sm text-[#0A3D2E]/50">Quantity</span>
-              <div className="flex items-center gap-3 bg-[#E2F1E7]/50 rounded-xl px-3 py-2">
-                <button 
-                  onClick={() => setQty(Math.max(1, qty - 1))} 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white transition-colors"
+              <span className="text-sm text-[#0A3D2E]/50 dark:text-white/70">Quantity</span>
+              <div className="flex items-center gap-3 bg-[#E2F1E7]/50 dark:bg-white/5 rounded-xl px-3 py-2">
+                <button
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white dark:hover:bg-white/10 transition-colors"
                   disabled={product.stock === 0}
                 >
-                  <Minus className="w-4 h-4 text-[#0A3D2E]" />
+                  <Minus className="w-4 h-4 text-[#0A3D2E] dark:text-white" />
                 </button>
-                <span className="w-8 text-center font-medium text-[#0A3D2E]">{qty}</span>
-                <button 
+                <span className="w-8 text-center font-medium text-[#0A3D2E] dark:text-white">{qty}</span>
+                <button
                   onClick={() => {
                     if (qty >= (product.stock || 0)) {
                       toast.error(`Only ${product.stock} ${product.stock === 1 ? 'product' : 'products'} available`);
@@ -572,10 +579,10 @@ export default function ProductDetail() {
                     }
                     setQty(qty + 1);
                   }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white dark:hover:bg-white/10 transition-colors"
                   disabled={product.stock === 0 || qty >= product.stock}
                 >
-                  <Plus className="w-4 h-4 text-[#0A3D2E]" />
+                  <Plus className="w-4 h-4 text-[#0A3D2E] dark:text-white" />
                 </button>
               </div>
             </div>
@@ -598,7 +605,7 @@ export default function ProductDetail() {
 
       {/* Related Products Section */}
       {relatedProducts.length > 0 && (
-        <div className="mt-16 pt-12 border-t border-[#E2F1E7]">
+        <div className="mt-16 pt-12 border-t border-[#E2F1E7] dark:border-white/10">
           <h2 className="font-heading font-bold text-2xl text-[#0A3D2E] dark:text-white mb-8">Related Products</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {relatedProducts.map((relatedProduct) => (
@@ -607,16 +614,18 @@ export default function ProductDetail() {
                 to={`/product/${relatedProduct.id}`}
                 className="group"
               >
-                <div className="bg-white dark:bg-[#071f15] rounded-2xl overflow-hidden border border-[#E2F1E7] dark:border-[#22C55E]/10 hover:shadow-lg dark:hover:shadow-none transition-all duration-300">
-                  <div className="aspect-square overflow-hidden bg-[#E2F1E7]/30">
+                <div className="bg-white dark:bg-[#071f15] rounded-2xl overflow-hidden border border-[#E2F1E7] dark:border-white/10 hover:shadow-lg dark:hover:shadow-none transition-all duration-300">
+                  <div className="aspect-square overflow-hidden bg-[#E2F1E7]/30 dark:bg-white/5">
                     {relatedProduct.images && relatedProduct.images.length > 0 ? (
                       <img
                         src={relatedProduct.images[0]}
                         alt={relatedProduct.name}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onLoad={(e) => e.target.classList.add('loaded')}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#0A3D2E]/10">
+                      <div className="w-full h-full flex items-center justify-center text-[#0A3D2E]/10 dark:text-white/10">
                         <span className="text-4xl font-heading font-bold">B</span>
                       </div>
                     )}

@@ -26,14 +26,14 @@ export default function About() {
       <section className="py-24 lg:py-32">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
-            <img src={ABOUT_IMG} alt="Laboratory with botanical supplements" className="rounded-3xl w-full shadow-lg" />
+            <img src={ABOUT_IMG} alt="Laboratory with botanical supplements" className="rounded-3xl w-full shadow-lg dark:shadow-black/20" />
           </div>
           <div>
             <span className="text-xs font-semibold uppercase tracking-widest text-[#22C55E]">The Mission</span>
-            <h2 className="font-heading font-bold text-3xl text-[#0A3D2E] mt-3 mb-6">
+            <h2 className="font-heading font-bold text-3xl text-[#0A3D2E] dark:text-white mt-3 mb-6">
               Where Botanicals Meet Lab-Grade Quality
             </h2>
-            <div className="space-y-4 text-[#0A3D2E]/70 leading-relaxed">
+            <div className="space-y-4 text-[#0A3D2E]/70 dark:text-white/80 leading-relaxed">
               <p>
                 At BennyCare, we merge the wisdom of nature with modern clinical science. Every supplement
                 and oral care product is crafted from responsibly sourced botanical ingredients, then
@@ -55,11 +55,11 @@ export default function About() {
       </section>
 
       {/* Contact */}
-      <section className="py-24 lg:py-32 bg-[#E2F1E7]/30">
+      <section className="py-24 lg:py-32 bg-[#E2F1E7]/30 dark:bg-white/5">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="text-center mb-16">
             <span className="text-xs font-semibold uppercase tracking-widest text-[#22C55E]">Get In Touch</span>
-            <h2 className="font-heading font-bold text-3xl text-[#0A3D2E] mt-3">Contact Us</h2>
+            <h2 className="font-heading font-bold text-3xl text-[#0A3D2E] dark:text-white mt-3">Contact Us</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
             {[
@@ -67,15 +67,15 @@ export default function About() {
               { icon: Phone, label: "Phone", value: "+2348033136182", href: "tel:+2348033136182" },
               { icon: MapPin, label: "Location", value: "Isolo, Lagos", href: null },
             ].map(({ icon: Icon, label, value, href }) => (
-              <div key={label} className="text-center p-6 bg-white rounded-2xl border border-[#E2F1E7]">
-                <div className="w-10 h-10 rounded-lg bg-[#E2F1E7] flex items-center justify-center mx-auto mb-3">
-                  <Icon className="w-5 h-5 text-[#0A3D2E]" />
+              <div key={label} className="text-center p-6 bg-white dark:bg-[#071f15] rounded-2xl border border-[#E2F1E7] dark:border-white/10">
+                <div className="w-10 h-10 rounded-lg bg-[#E2F1E7] dark:bg-white/10 flex items-center justify-center mx-auto mb-3">
+                  <Icon className="w-5 h-5 text-[#0A3D2E] dark:text-white" />
                 </div>
-                <p className="text-xs text-[#0A3D2E]/40 mb-1">{label}</p>
+                <p className="text-xs text-[#0A3D2E]/40 dark:text-white/60 mb-1">{label}</p>
                 {href ? (
-                  <a href={href} className="text-sm font-medium text-[#0A3D2E] hover:text-[#22C55E] transition-colors">{value}</a>
+                  <a href={href} className="text-sm font-medium text-[#0A3D2E] dark:text-white hover:text-[#22C55E] transition-colors">{value}</a>
                 ) : (
-                  <p className="text-sm font-medium text-[#0A3D2E]">{value}</p>
+                  <p className="text-sm font-medium text-[#0A3D2E] dark:text-white">{value}</p>
                 )}
               </div>
             ))}

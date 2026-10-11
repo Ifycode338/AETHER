@@ -96,9 +96,9 @@ export default function ReviewList({ productId, userId }) {
   if (reviews.length === 0) {
     return (
       <div className="text-center py-12 bg-[#E2F1E7]/20 dark:bg-white/5 rounded-2xl border-2 border-dashed border-[#E2F1E7] dark:border-white/10">
-        <Star className="w-12 h-12 text-[#E2F1E7] dark:text-white/20 mx-auto mb-4" />
-        <p className="text-[#0A3D2E]/50 dark:text-white/50 mb-2">No reviews yet</p>
-        <p className="text-sm text-[#0A3D2E]/40 dark:text-white/40">Be the first to share your experience!</p>
+        <Star className="w-12 h-12 text-[#E2F1E7] dark:text-white/30 mx-auto mb-4" />
+        <p className="text-[#0A3D2E]/50 dark:text-white/70 mb-2">No reviews yet</p>
+        <p className="text-sm text-[#0A3D2E]/40 dark:text-white/60">Be the first to share your experience!</p>
       </div>
     );
   }

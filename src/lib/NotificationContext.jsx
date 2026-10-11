@@ -262,7 +262,7 @@ export const NotificationProvider = ({ children }) => {
 
   const clearAll = async () => {
     if (!user) return;
-    
+
     try {
       const { error } = await supabase
         .from('notifications')
@@ -271,9 +271,14 @@ export const NotificationProvider = ({ children }) => {
 
       if (error) {
         console.error('Error clearing notifications:', error);
+        toast.error('Failed to clear notifications');
+      } else {
+        setNotifications([]);
+        toast.success('All notifications cleared');
       }
     } catch (error) {
       console.error('Error clearing notifications:', error);
+      toast.error('Failed to clear notifications');
     }
   };
 
