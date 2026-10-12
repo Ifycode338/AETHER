@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -53,6 +53,10 @@ export default function Payment() {
   const [processing, setProcessing] = useState(false);
   const [orderData, setOrderData] = useState(null);
   const [error, setError] = useState(null);
+  const processingRef = useRef(false);
+  const finalizingPaymentRef = useRef(false);
+  const returnedFromBackgroundRef = useRef(false);
+  const resumeTimeoutRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -109,6 +113,36 @@ export default function Payment() {
     };
   }, [location.state]);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        if (processingRef.current && !finalizingPaymentRef.current) {
+          returnedFromBackgroundRef.current = true;
+        }
+        return;
+      }
+
+      if (!returnedFromBackgroundRef.current) return;
+      returnedFromBackgroundRef.current = false;
+      clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = setTimeout(() => {
+        if (processingRef.current && !finalizingPaymentRef.current) {
+          processingRef.current = false;
+          setProcessing(false);
+          toast.info(
+            "The Paystack window did not resume. Your order details are saved; tap Pay to continue. If you already completed the transfer, check its status before retrying."
+          );
+        }
+      }, 1500);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearTimeout(resumeTimeoutRef.current);
+    };
+  }, []);
+
   // Prevent navigation when payment is in progress
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -150,6 +184,8 @@ export default function Payment() {
     console.log('Order data:', orderData);
 
     setProcessing(true);
+    processingRef.current = true;
+    finalizingPaymentRef.current = false;
     setError(null);
 
     try {
@@ -170,11 +206,14 @@ export default function Payment() {
         },
         callback: (response) => {
           console.log('Payment callback triggered:', response);
-          // Call the async function
+          if (finalizingPaymentRef.current) return;
+          finalizingPaymentRef.current = true;
           createOrder(response);
         },
         onClose: () => {
           console.log('Payment modal closed');
+          if (finalizingPaymentRef.current) return;
+          processingRef.current = false;
           setProcessing(false);
           toast.info('Payment cancelled');
         },
@@ -185,18 +224,11 @@ export default function Payment() {
 
       console.log('Opening Paystack modal...');
       handler.openIframe();
-
-      // Add timeout to detect if modal doesn't open
-      setTimeout(() => {
-        if (processing) {
-          console.log('Payment modal timeout - still processing');
-          setProcessing(false);
-          toast.error('Payment modal did not open. Please try again.');
-        }
-      }, 10000); // 10 second timeout
     } catch (err) {
       console.error('Error opening Paystack modal:', err);
       setError('Failed to open payment modal. Please try again.');
+      processingRef.current = false;
+      finalizingPaymentRef.current = false;
       setProcessing(false);
       toast.error('Failed to open payment modal');
     }
@@ -329,6 +361,8 @@ export default function Payment() {
       
       console.log('Cart cleared, redirecting to receipt...');
 
+      processingRef.current = false;
+      finalizingPaymentRef.current = false;
       setProcessing(false);
       toast.success('Payment successful!');
 
@@ -356,6 +390,8 @@ export default function Payment() {
     } catch (err) {
       console.error('Error creating order:', err);
       setError(err.message || 'Failed to create order. Please try again.');
+      processingRef.current = false;
+      finalizingPaymentRef.current = false;
       setProcessing(false);
       toast.error('Failed to create order');
     }
@@ -394,7 +430,7 @@ export default function Payment() {
       {processing && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-6">
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            ⚠️ Payment in progress. Please do not close this window or navigate away.
+            Payment in progress. If the Paystack window closes while you switch apps, return here to continue. If you already completed the transfer, check its status before trying again.
           </p>
         </div>
       )}
