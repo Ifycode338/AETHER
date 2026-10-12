@@ -401,13 +401,15 @@ export default function ChatWidget() {
     if ((!text.trim() && !attachedFile) || !conversation?.id) return;
     
     const messageText = text.trim();
+    const attachmentData = attachedFile ? { url: attachedFile.url, name: attachedFile.name } : null;
+    
     setText("");
     setAttachedFile(null);
     
     try {
       const senderName = getUserDisplayName();
       
-      console.log('Sending message:', { senderName, conversationId: conversation.id, hasFile: !!attachedFile });
+      console.log('Sending message:', { senderName, conversationId: conversation.id, hasFile: !!attachmentData });
 
       const { data: msg, error } = await supabase
         .from('chat_messages')
@@ -416,8 +418,8 @@ export default function ChatWidget() {
           sender_role: "customer",
           sender_name: senderName,
           message: messageText,
-          attachment_url: attachedFile?.url || null,
-          attachment_name: attachedFile?.name || null,
+          attachment_url: attachmentData?.url || null,
+          attachment_name: attachmentData?.name || null,
         })
         .select()
         .single();
@@ -447,7 +449,7 @@ export default function ChatWidget() {
       const { error: updateError } = await supabase
         .from('chat_conversations')
         .update({
-          last_message: messageText || (attachedFile ? '📎 Sent a file' : ''),
+          last_message: messageText || (attachmentData ? '📎 Sent a file' : ''),
           last_message_at: new Date().toISOString(),
           admin_unread: currentAdminUnread + 1,
           user_unread: 0,
