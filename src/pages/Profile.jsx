@@ -629,14 +629,6 @@ export default function Profile() {
 
           <Button
             variant="outline"
-            onClick={() => sendLocalNotification('Test Notification', 'This is a test notification to verify the system is working!', 'info', { link: '/profile' })}
-            className="border-[#0A3D2E]/20 text-[#0A3D2E] dark:border-white/10 dark:text-white dark:hover:bg-white/5 rounded-xl h-12 font-medium hover:border-[#22C55E] hover:bg-[#22C55E]/5 hover:text-[#22C55E] hover:shadow-md hover:shadow-[#22C55E]/10 hover:scale-[1.02] transition-all duration-300 justify-start"
-          >
-            <Bell className="w-4 h-4 mr-3" /> Test Notification
-          </Button>
-
-          <Button
-            variant="outline"
             onClick={() => resetNotifications()}
             className="border-red-500/20 text-red-500 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10 rounded-xl h-12 font-medium hover:border-red-500 hover:bg-red-500/5 hover:text-red-500 hover:shadow-md hover:shadow-red-500/10 hover:scale-[1.02] transition-all duration-300 justify-start"
           >

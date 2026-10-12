@@ -57,9 +57,11 @@ export default function UserOrders() {
 
   const filtered = orders.filter(order => {
     const matchesStatus = filter === "all" || order.status === filter;
+    const productNames = order.items?.map(item => item.product_name).join(' ').toLowerCase() || '';
     const matchesSearch = 
       order.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id?.toLowerCase().includes(searchQuery.toLowerCase());
+      order.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      productNames.includes(searchQuery.toLowerCase());
     
     return matchesStatus && matchesSearch;
   });
@@ -97,7 +99,7 @@ export default function UserOrders() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0A3D2E]/30 dark:text-white/30" />
             <input
               type="text"
-              placeholder="Search by order ID..."
+              placeholder="Search by order ID or product name..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-[#E2F1E7] dark:border-white/10 bg-white dark:bg-white/5 text-[#0A3D2E] dark:text-white placeholder-[#0A3D2E]/30 dark:placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
@@ -148,6 +150,9 @@ export default function UserOrders() {
         <div className="space-y-4">
           {filtered.map(order => {
             const { icon: StatusIcon, style } = getStatusInfo(order.status);
+            const productNames = order.items?.map(item => item.product_name).slice(0, 2);
+            const hasMoreProducts = (order.items?.length || 0) > 2;
+            
             return (
               <Link
                 key={order.id}
@@ -165,8 +170,9 @@ export default function UserOrders() {
                         {order.status}
                       </span>
                     </div>
-                    <p className="text-sm text-[#0A3D2E]/60 dark:text-white/60 mb-1">
-                      {order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'items'}
+                    <p className="text-sm text-[#0A3D2E] dark:text-white font-medium mb-1">
+                      {productNames?.join(', ')}
+                      {hasMoreProducts && <span className="text-[#0A3D2E]/60 dark:text-white/60"> +{order.items.length - 2} more</span>}
                     </p>
                     <p className="text-xs text-[#0A3D2E]/40 dark:text-white/40">
                       {order.created_date ? new Date(order.created_date).toLocaleString() : "—"}

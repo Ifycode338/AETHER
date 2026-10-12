@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
-import { MessageCircle, X, Send } from "lucide-react";
+import { MessageCircle, X, Send, Paperclip, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 
 const GREETING =
@@ -16,8 +16,11 @@ export default function ChatWidget() {
   const [text, setText] = useState("");
   const [form, setForm] = useState({ name: "", email: "" });
   const [unreadCount, setUnreadCount] = useState(0);
+  const [typing, setTyping] = useState(false);
+  const [attachedFile, setAttachedFile] = useState(null);
   const scrollRef = useRef(null);
   const channelRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Debug user state
   useEffect(() => {
@@ -395,15 +398,16 @@ export default function ChatWidget() {
 
   const send = useCallback(async (e) => {
     e.preventDefault();
-    if (!text.trim() || !conversation?.id) return;
+    if ((!text.trim() && !attachedFile) || !conversation?.id) return;
     
     const messageText = text.trim();
     setText("");
+    setAttachedFile(null);
     
     try {
       const senderName = getUserDisplayName();
       
-      console.log('Sending message:', { senderName, conversationId: conversation.id });
+      console.log('Sending message:', { senderName, conversationId: conversation.id, hasFile: !!attachedFile });
 
       const { data: msg, error } = await supabase
         .from('chat_messages')
@@ -412,6 +416,8 @@ export default function ChatWidget() {
           sender_role: "customer",
           sender_name: senderName,
           message: messageText,
+          attachment_url: attachedFile?.url || null,
+          attachment_name: attachedFile?.name || null,
         })
         .select()
         .single();
@@ -441,7 +447,7 @@ export default function ChatWidget() {
       const { error: updateError } = await supabase
         .from('chat_conversations')
         .update({
-          last_message: messageText,
+          last_message: messageText || (attachedFile ? '📎 Sent a file' : ''),
           last_message_at: new Date().toISOString(),
           admin_unread: currentAdminUnread + 1,
           user_unread: 0,
@@ -463,7 +469,51 @@ export default function ChatWidget() {
       console.error('Error in send:', error);
       toast.error('Failed to send message');
     }
-  }, [text, conversation, getUserDisplayName]);
+  }, [text, conversation, getUserDisplayName, attachedFile]);
+
+  const handleFileSelect = useCallback((e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File too large. Maximum size is 5MB.');
+      return;
+    }
+
+    // Check file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Please upload images or PDFs.');
+      return;
+    }
+
+    // Create object URL for preview
+    const url = URL.createObjectURL(file);
+    setAttachedFile({ file, url, name: file.name });
+  }, []);
+
+  const removeAttachedFile = useCallback(() => {
+    if (attachedFile?.url) {
+      URL.revokeObjectURL(attachedFile.url);
+    }
+    setAttachedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [attachedFile]);
+
+  // Typing indicator
+  useEffect(() => {
+    const typingTimeout = setTimeout(() => {
+      if (typing && conversation?.id) {
+        // Send typing indicator to database (optional enhancement)
+        setTyping(false);
+      }
+    }, 2000);
+
+    return () => clearTimeout(typingTimeout);
+  }, [typing, conversation?.id]);
 
   const renderMessage = useCallback((message) => {
     const isAdmin = message.sender_role === 'admin';
@@ -480,6 +530,27 @@ export default function ChatWidget() {
         >
           {isAdmin && (
             <div className="text-xs font-semibold mb-1 opacity-70">BennyCare Support</div>
+          )}
+          {message.attachment_url && (
+            <div className="mb-2">
+              {message.attachment_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                <img
+                  src={message.attachment_url}
+                  alt={message.attachment_name}
+                  className="max-w-full rounded-lg"
+                />
+              ) : (
+                <a
+                  href={message.attachment_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-blue-400 hover:underline"
+                >
+                  <Paperclip className="w-4 h-4" />
+                  {message.attachment_name}
+                </a>
+              )}
+            </div>
           )}
           {message.message}
         </div>
@@ -570,17 +641,61 @@ export default function ChatWidget() {
             <>
               <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F8FAFC] dark:bg-[#051510]">
                 {messages.map((m) => renderMessage(m))}
+                {typing && (
+                  <div className="flex justify-start">
+                    <div className="bg-[#E2F1E7] dark:bg-white/10 text-[#0A3D2E] dark:text-white px-3.5 py-2 rounded-2xl rounded-bl-md text-sm">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-[#0A3D2E]/40 dark:bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-[#0A3D2E]/40 dark:bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-[#0A3D2E]/40 dark:bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
+              {attachedFile && (
+                <div className="px-3 py-2 bg-[#E2F1E7]/30 dark:bg-white/5 border-t border-[#E2F1E7] dark:border-white/10 flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 text-sm text-[#0A3D2E] dark:text-white">
+                    <Paperclip className="w-4 h-4 text-[#22C55E]" />
+                    <span className="truncate">{attachedFile.name}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeAttachedFile}
+                    className="p-1 hover:bg-red-500/10 rounded-full text-red-500"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
               <form onSubmit={send} className="p-3 border-t border-[#E2F1E7] dark:border-white/10 flex items-center gap-2">
                 <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept="image/*,.pdf"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-10 h-10 rounded-xl bg-[#E2F1E7]/40 dark:bg-white/5 text-[#0A3D2E] dark:text-white flex items-center justify-center hover:bg-[#E2F1E7]/60 dark:hover:bg-white/10 transition-colors flex-shrink-0"
+                  title="Attach file"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+                <input
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => {
+                    setText(e.target.value);
+                    setTyping(true);
+                  }}
                   placeholder="Type a message…"
                   className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#E2F1E7]/40 dark:bg-white/5 text-sm text-[#0A3D2E] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#22C55E] placeholder-[#0A3D2E]/40 dark:placeholder-white/30"
                 />
                 <button
                   type="submit"
-                  disabled={!text.trim()}
+                  disabled={!text.trim() && !attachedFile}
                   className="w-10 h-10 rounded-xl bg-[#22C55E] text-[#051510] flex items-center justify-center disabled:opacity-40 hover:bg-[#16a34a] transition-colors flex-shrink-0"
                 >
                   <Send className="w-4 h-4" />
