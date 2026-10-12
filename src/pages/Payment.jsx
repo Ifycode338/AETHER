@@ -9,6 +9,40 @@ import { ArrowLeft, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const PAYSTACK_PUBLIC_KEY = "pk_live_6ac0339e04b162798a65338e16c2c91f32c0814e";
+const PENDING_PAYMENT_KEY = "pending_payment_order";
+
+let paystackScriptPromise;
+
+function loadPaystackScript() {
+  if (window.PaystackPop) {
+    return Promise.resolve();
+  }
+
+  if (!paystackScriptPromise) {
+    paystackScriptPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://js.paystack.co/v1/inline.js";
+      script.async = true;
+      script.onload = () => {
+        if (window.PaystackPop) {
+          resolve();
+        } else {
+          reject(new Error("Paystack loaded without its payment interface."));
+        }
+      };
+      script.onerror = () => {
+        script.remove();
+        reject(new Error("Failed to load the Paystack script."));
+      };
+      document.body.appendChild(script);
+    }).catch((loadError) => {
+      paystackScriptPromise = null;
+      throw loadError;
+    });
+  }
+
+  return paystackScriptPromise;
+}
 
 export default function Payment() {
   const { user } = useAuth();
@@ -21,39 +55,66 @@ export default function Payment() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Get order data from location state
-    const data = location.state;
+    let active = true;
+    let data = location.state;
+
+    if (!data) {
+      try {
+        const savedOrder = sessionStorage.getItem(PENDING_PAYMENT_KEY);
+        data = savedOrder ? JSON.parse(savedOrder) : null;
+      } catch (storageError) {
+        console.error("Failed to restore pending payment:", storageError);
+        setError("Could not restore your pending payment. Please return to checkout.");
+        setLoading(false);
+        return () => {
+          active = false;
+        };
+      }
+    }
+
     if (!data) {
       setError("No order data found. Please start checkout again.");
       setLoading(false);
-      return;
+      return () => {
+        active = false;
+      };
     }
 
     setOrderData(data);
-    setLoading(false);
+    try {
+      sessionStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify(data));
+    } catch (storageError) {
+      console.error("Failed to save pending payment:", storageError);
+      setError("Could not save your pending payment. Please try again.");
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
 
-    // Auto-load Paystack script
-    const script = document.createElement('script');
-    script.src = 'https://js.paystack.co/v1/inline.js';
-    script.async = true;
-    script.onload = () => {
-      console.log('Paystack script loaded successfully');
-    };
-    script.onerror = () => {
-      console.error('Failed to load Paystack script');
-      setError('Failed to load payment system. Please refresh and try again.');
-    };
-    document.body.appendChild(script);
+    loadPaystackScript()
+      .then(() => {
+        if (active) setLoading(false);
+      })
+      .catch((loadError) => {
+        console.error("Failed to load Paystack script:", loadError);
+        if (active) {
+          setError("Failed to load payment system. Please try again.");
+          setLoading(false);
+        }
+      });
 
     return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
+      active = false;
     };
-  }, [location]);
+  }, [location.state]);
 
   const handlePayment = () => {
     if (!orderData) return;
+    if (!window.PaystackPop) {
+      setError("Payment system is unavailable. Please try again.");
+      return;
+    }
 
     console.log('Starting payment process...');
     console.log('Paystack available:', typeof window.PaystackPop !== 'undefined');
@@ -229,6 +290,7 @@ export default function Payment() {
       // Clear cart from localStorage and trigger cart clear in app
       localStorage.removeItem('checkout_cart');
       localStorage.removeItem('cart');
+      sessionStorage.removeItem(PENDING_PAYMENT_KEY);
       
       // Also clear any cart data that might be stored
       const cartClearEvent = new CustomEvent('cartClear');

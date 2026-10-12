@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "@/api/supabaseClient";
-import { ArrowRight, Star, CheckCircle, Truck, Lock, Award, ChevronDown, ChevronUp, Shield, ShoppingBag } from "lucide-react";
+import { ArrowRight, Star, CheckCircle, Truck, Lock, Award, ChevronDown, ChevronUp, Shield, MessageCircle, ShoppingBag, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/store/ProductCard";
 
@@ -15,15 +15,6 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
-  const [showFloatingNav, setShowFloatingNav] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowFloatingNav(window.scrollY > 300);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -268,23 +259,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Floating Navigation */}
-      {showFloatingNav && (
-        <div
-          className="fixed bottom-36 md:bottom-[5.5rem] right-5 md:right-7 z-40 flex flex-col gap-2 animate-in slide-in-from-right duration-300"
-          style={{ marginBottom: "env(safe-area-inset-bottom)" }}
-        >
-          <Link to="/shop" className="w-12 h-12 rounded-full bg-[#22C55E] text-[#051510] flex items-center justify-center shadow-lg hover:scale-110 transition-transform" title="Shop">
-            <ShoppingBag className="w-5 h-5" />
-          </Link>
-          <Link to="/categories" className="w-12 h-12 rounded-full bg-white dark:bg-[#071f15] text-[#0A3D2E] dark:text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform" title="Categories">
-            <Lock className="w-5 h-5" />
-          </Link>
-          <Link to="/about" className="w-12 h-12 rounded-full bg-white dark:bg-[#071f15] text-[#0A3D2E] dark:text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform" title="About">
-            <Shield className="w-5 h-5" />
-          </Link>
-        </div>
-      )}
+      {/* Floating Tabs */}
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+        <Link to="/shop" className="w-12 h-12 rounded-full bg-[#22C55E] text-[#051510] flex items-center justify-center shadow-lg hover:scale-110 transition-transform" title="Shop">
+          <ShoppingBag className="w-5 h-5" />
+        </Link>
+        <Link to="/wishlist" className="w-12 h-12 rounded-full bg-white dark:bg-[#071f15] text-[#0A3D2E] dark:text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform" title="Wishlist">
+          <Heart className="w-5 h-5" />
+        </Link>
+        <Link to="/chat" className="w-12 h-12 rounded-full bg-[#0A3D2E] dark:bg-[#22C55E] text-white dark:text-[#051510] flex items-center justify-center shadow-lg hover:scale-110 transition-transform" title="Chat">
+          <MessageCircle className="w-5 h-5" />
+        </Link>
+      </div>
     </div>
   );
 }
