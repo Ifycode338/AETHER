@@ -141,6 +141,7 @@ export default function Checkout() {
           total
         };
         
+        sessionStorage.removeItem("pending_paystack_attempt");
         navigate('/payment', { state: orderData });
       } catch (err) {
         console.error('Error validating stock:', err);

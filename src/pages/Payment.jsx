@@ -8,41 +8,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
-const PAYSTACK_PUBLIC_KEY = "pk_live_6ac0339e04b162798a65338e16c2c91f32c0814e";
 const PENDING_PAYMENT_KEY = "pending_payment_order";
-
-let paystackScriptPromise;
-
-function loadPaystackScript() {
-  if (window.PaystackPop) {
-    return Promise.resolve();
-  }
-
-  if (!paystackScriptPromise) {
-    paystackScriptPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "https://js.paystack.co/v1/inline.js";
-      script.async = true;
-      script.onload = () => {
-        if (window.PaystackPop) {
-          resolve();
-        } else {
-          reject(new Error("Paystack loaded without its payment interface."));
-        }
-      };
-      script.onerror = () => {
-        script.remove();
-        reject(new Error("Failed to load the Paystack script."));
-      };
-      document.body.appendChild(script);
-    }).catch((loadError) => {
-      paystackScriptPromise = null;
-      throw loadError;
-    });
-  }
-
-  return paystackScriptPromise;
-}
+const PENDING_PAYMENT_ATTEMPT_KEY = "pending_paystack_attempt";
 
 export default function Payment() {
   const { user } = useAuth();
@@ -53,13 +20,13 @@ export default function Payment() {
   const [processing, setProcessing] = useState(false);
   const [orderData, setOrderData] = useState(null);
   const [error, setError] = useState(null);
+  const [paymentAttempt, setPaymentAttempt] = useState(null);
+  const [paymentNotice, setPaymentNotice] = useState("");
   const processingRef = useRef(false);
   const finalizingPaymentRef = useRef(false);
-  const returnedFromBackgroundRef = useRef(false);
-  const resumeTimeoutRef = useRef(null);
+  const verificationStartedRef = useRef(null);
 
   useEffect(() => {
-    let active = true;
     let data = location.state;
 
     if (!data) {
@@ -70,171 +37,143 @@ export default function Payment() {
         console.error("Failed to restore pending payment:", storageError);
         setError("Could not restore your pending payment. Please return to checkout.");
         setLoading(false);
-        return () => {
-          active = false;
-        };
+        return;
       }
     }
 
     if (!data) {
       setError("No order data found. Please start checkout again.");
       setLoading(false);
-      return () => {
-        active = false;
-      };
+      return;
     }
 
     setOrderData(data);
     try {
       sessionStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify(data));
+      const savedAttempt = sessionStorage.getItem(PENDING_PAYMENT_ATTEMPT_KEY);
+      const attempt = savedAttempt ? JSON.parse(savedAttempt) : null;
+      if (
+        attempt?.amount === Math.round(data.total * 100) &&
+        attempt?.email?.toLowerCase() === data.customer_email.toLowerCase()
+      ) {
+        setPaymentAttempt(attempt);
+      } else {
+        sessionStorage.removeItem(PENDING_PAYMENT_ATTEMPT_KEY);
+        setPaymentAttempt(null);
+      }
     } catch (storageError) {
       console.error("Failed to save pending payment:", storageError);
       setError("Could not save your pending payment. Please try again.");
       setLoading(false);
-      return () => {
-        active = false;
-      };
-    }
-
-    loadPaystackScript()
-      .then(() => {
-        if (active) setLoading(false);
-      })
-      .catch((loadError) => {
-        console.error("Failed to load Paystack script:", loadError);
-        if (active) {
-          setError("Failed to load payment system. Please try again.");
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [location.state]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        if (processingRef.current && !finalizingPaymentRef.current) {
-          returnedFromBackgroundRef.current = true;
-        }
-        return;
-      }
-
-      if (!returnedFromBackgroundRef.current) return;
-      returnedFromBackgroundRef.current = false;
-      clearTimeout(resumeTimeoutRef.current);
-      resumeTimeoutRef.current = setTimeout(() => {
-        if (processingRef.current && !finalizingPaymentRef.current) {
-          processingRef.current = false;
-          setProcessing(false);
-          toast.info(
-            "The Paystack window did not resume. Your order details are saved; tap Pay to continue. If you already completed the transfer, check its status before retrying."
-          );
-        }
-      }, 1500);
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      clearTimeout(resumeTimeoutRef.current);
-    };
-  }, []);
-
-  // Prevent navigation when payment is in progress
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (processing) {
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-      }
-    };
-
-    const handlePopState = (e) => {
-      if (processing) {
-        e.preventDefault();
-        const shouldLeave = window.confirm('Payment is in progress. Are you sure you want to leave? The payment will be cancelled.');
-        if (!shouldLeave) {
-          window.history.pushState(null, '', window.location.href);
-        }
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [processing]);
-
-  const handlePayment = () => {
-    if (!orderData) return;
-    if (!window.PaystackPop) {
-      setError("Payment system is unavailable. Please try again.");
       return;
     }
 
-    console.log('Starting payment process...');
-    console.log('Paystack available:', typeof window.PaystackPop !== 'undefined');
-    console.log('Order data:', orderData);
+    setLoading(false);
+  }, [location.state]);
+
+  const startOrResumePayment = async () => {
+    if (!orderData) return;
+    if (paymentAttempt?.authorization_url) {
+      window.location.assign(paymentAttempt.authorization_url);
+      return;
+    }
 
     setProcessing(true);
     processingRef.current = true;
-    finalizingPaymentRef.current = false;
     setError(null);
+    setPaymentNotice("");
 
     try {
-      const handler = window.PaystackPop.setup({
-        key: PAYSTACK_PUBLIC_KEY,
-        email: orderData.customer_email,
-        amount: orderData.total * 100, // Convert to kobo
-        currency: 'NGN',
-        ref: '' + Math.floor((Math.random() * 1000000000) + 1),
-        metadata: {
-          custom_fields: [
-            {
-              display_name: "Customer Name",
-              variable_name: "customer_name",
-              value: orderData.customer_name
-            }
-          ]
+      const { data, error: initializeError } = await supabase.functions.invoke("paystack-checkout", {
+        body: {
+          action: "initialize",
+          email: orderData.customer_email,
+          amount: Math.round(orderData.total * 100),
+          currency: "NGN",
+          callback_url: `${window.location.origin}/payment`,
+          metadata: {
+            customer_name: orderData.customer_name,
+          },
         },
-        callback: (response) => {
-          console.log('Payment callback triggered:', response);
-          if (finalizingPaymentRef.current) return;
-          finalizingPaymentRef.current = true;
-          createOrder(response);
-        },
-        onClose: () => {
-          console.log('Payment modal closed');
-          if (finalizingPaymentRef.current) return;
-          processingRef.current = false;
-          setProcessing(false);
-          toast.info('Payment cancelled');
-        },
-        onOpen: () => {
-          console.log('Payment modal opened');
-        }
       });
 
-      console.log('Opening Paystack modal...');
-      handler.openIframe();
+      if (initializeError) throw initializeError;
+      if (!data?.authorization_url || !data?.reference) {
+        throw new Error("Paystack did not return a checkout link.");
+      }
+
+      const attempt = {
+        authorization_url: data.authorization_url,
+        reference: data.reference,
+        amount: Math.round(orderData.total * 100),
+        email: orderData.customer_email,
+      };
+      sessionStorage.setItem(PENDING_PAYMENT_ATTEMPT_KEY, JSON.stringify(attempt));
+      setPaymentAttempt(attempt);
+      window.location.assign(attempt.authorization_url);
     } catch (err) {
-      console.error('Error opening Paystack modal:', err);
-      setError('Failed to open payment modal. Please try again.');
+      console.error("Failed to start Paystack checkout:", err);
+      setPaymentNotice("Could not open secure checkout. Please try again.");
       processingRef.current = false;
-      finalizingPaymentRef.current = false;
       setProcessing(false);
-      toast.error('Failed to open payment modal');
+      toast.error("Failed to start payment");
     }
   };
 
+  const verifyPayment = async (reference = paymentAttempt?.reference) => {
+    if (!reference || !orderData || processingRef.current) return;
+    if (paymentAttempt?.reference && reference !== paymentAttempt.reference) {
+      setPaymentNotice("The returned payment reference does not match this checkout.");
+      return;
+    }
 
+    processingRef.current = true;
+    setProcessing(true);
+    setPaymentNotice("Checking your transfer with Paystack…");
+    try {
+      const { data, error: verifyError } = await supabase.functions.invoke("paystack-checkout", {
+        body: { action: "verify", reference },
+      });
+      if (verifyError) throw verifyError;
+
+      if (data?.status !== "success") {
+        setPaymentNotice("Paystack has not confirmed this transfer yet. You can continue the same checkout or check again shortly.");
+        processingRef.current = false;
+        setProcessing(false);
+        return;
+      }
+
+      if (
+        data.reference !== reference ||
+        data.amount !== Math.round(orderData.total * 100) ||
+        data.currency !== "NGN" ||
+        data.email?.toLowerCase() !== orderData.customer_email.toLowerCase()
+      ) {
+        throw new Error("The confirmed payment details do not match this order.");
+      }
+
+      if (finalizingPaymentRef.current) return;
+      finalizingPaymentRef.current = true;
+      await createOrder({ reference });
+    } catch (verifyError) {
+      console.error("Failed to verify Paystack payment:", verifyError);
+      setPaymentNotice("We could not confirm the transfer yet. Your checkout is saved; check again or continue the same Paystack checkout.");
+      processingRef.current = false;
+      setProcessing(false);
+      toast.error("Could not verify payment");
+    }
+  };
+
+  useEffect(() => {
+    if (!orderData) return;
+
+    const params = new URLSearchParams(location.search);
+    const reference = params.get("reference") || params.get("trxref");
+    if (!reference || verificationStartedRef.current === reference) return;
+
+    verificationStartedRef.current = reference;
+    verifyPayment(reference);
+  }, [location.search, orderData]);
 
   const createOrder = async (paymentResponse) => {
     try {
@@ -354,6 +293,7 @@ export default function Payment() {
       localStorage.removeItem('checkout_cart');
       localStorage.removeItem('cart');
       sessionStorage.removeItem(PENDING_PAYMENT_KEY);
+      sessionStorage.removeItem(PENDING_PAYMENT_ATTEMPT_KEY);
       
       // Also clear any cart data that might be stored
       const cartClearEvent = new CustomEvent('cartClear');
@@ -363,6 +303,10 @@ export default function Payment() {
 
       processingRef.current = false;
       finalizingPaymentRef.current = false;
+      const callbackUrl = new URL(window.location.href);
+      callbackUrl.searchParams.delete("reference");
+      callbackUrl.searchParams.delete("trxref");
+      window.history.replaceState({}, "", callbackUrl);
       setProcessing(false);
       toast.success('Payment successful!');
 
@@ -430,7 +374,7 @@ export default function Payment() {
       {processing && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-6">
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            Payment in progress. If the Paystack window closes while you switch apps, return here to continue. If you already completed the transfer, check its status before trying again.
+            Your order is saved. You can leave the app to complete the transfer, then return here to check its status.
           </p>
         </div>
       )}
@@ -442,6 +386,12 @@ export default function Payment() {
       >
         <ArrowLeft className="w-4 h-4 mr-2" /> Back
       </Button>
+
+      {paymentNotice && (
+        <div className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
+          {paymentNotice}
+        </div>
+      )}
 
       <div className="bg-white dark:bg-[#071f15] border border-[#E2F1E7] dark:border-[#22C55E]/10 rounded-2xl p-8">
         <div className="text-center mb-8">
@@ -491,7 +441,7 @@ export default function Payment() {
         </div>
 
         <Button
-          onClick={handlePayment}
+          onClick={startOrResumePayment}
           disabled={processing}
           className="w-full bg-[#22C55E] text-[#051510] hover:bg-[#16a34a] font-semibold h-14 rounded-xl"
         >
@@ -501,9 +451,20 @@ export default function Payment() {
               Processing...
             </>
           ) : (
-            `Pay ₦${orderData?.total?.toFixed(2)}`
+            paymentAttempt ? "Continue bank transfer" : `Pay ₦${orderData?.total?.toFixed(2)}`
           )}
         </Button>
+
+        {paymentAttempt && (
+          <Button
+            variant="outline"
+            onClick={() => verifyPayment()}
+            disabled={processing}
+            className="w-full mt-3"
+          >
+            Check transfer status
+          </Button>
+        )}
 
         <p className="text-xs text-center text-[#0A3D2E]/40 dark:text-white/40 mt-4">
           Secure payment powered by Paystack

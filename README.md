@@ -60,6 +60,18 @@ VITE_BASE44_APP_BASE_URL=https://your-app.base44.app
 
 When you use `base44 dev`, the command injects the local Base44 values for you, so `.env.local` is mainly needed for frontend-only workflows.
 
+## Paystack Bank Transfer Checkout
+
+Payment uses Paystack's hosted checkout so customers can leave the app for a bank transfer and return to the same saved payment attempt. The Paystack secret key must only be stored as a Supabase Edge Function secret; never add it to a `VITE_` variable or frontend code.
+
+In the Supabase dashboard for this project, add `PAYSTACK_SECRET_KEY` under **Project Settings → Edge Functions → Secrets**. Then deploy the checkout function from the project root:
+
+```bash
+supabase functions deploy paystack-checkout --project-ref chlfmkeplogbkornbwqc
+```
+
+The function initializes Paystack transactions and verifies completed transfers when the customer returns to `/payment`.
+
 ## Publish Your Changes
 
 After pushing your changes to git, open the Base44 dashboard and publish the app:
