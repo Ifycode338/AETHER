@@ -109,6 +109,35 @@ export default function Payment() {
     };
   }, [location.state]);
 
+  // Prevent navigation when payment is in progress
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (processing) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    const handlePopState = (e) => {
+      if (processing) {
+        e.preventDefault();
+        const shouldLeave = window.confirm('Payment is in progress. Are you sure you want to leave? The payment will be cancelled.');
+        if (!shouldLeave) {
+          window.history.pushState(null, '', window.location.href);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [processing]);
+
   const handlePayment = () => {
     if (!orderData) return;
     if (!window.PaystackPop) {
@@ -172,6 +201,8 @@ export default function Payment() {
       toast.error('Failed to open payment modal');
     }
   };
+
+
 
   const createOrder = async (paymentResponse) => {
     try {
@@ -360,9 +391,17 @@ export default function Payment() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12">
+      {processing && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-6">
+          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            ⚠️ Payment in progress. Please do not close this window or navigate away.
+          </p>
+        </div>
+      )}
       <Button
         variant="ghost"
         onClick={() => navigate(-1)}
+        disabled={processing}
         className="text-[#0A3D2E] hover:text-[#0A3D2E] mb-8"
       >
         <ArrowLeft className="w-4 h-4 mr-2" /> Back
