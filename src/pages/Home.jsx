@@ -258,19 +258,6 @@ export default function Home() {
           </Link>
         </div>
       </section>
-
-      {/* Floating Tabs */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
-        <Link to="/shop" className="w-12 h-12 rounded-full bg-[#22C55E] text-[#051510] flex items-center justify-center shadow-lg hover:scale-110 transition-transform" title="Shop">
-          <ShoppingBag className="w-5 h-5" />
-        </Link>
-        <Link to="/wishlist" className="w-12 h-12 rounded-full bg-white dark:bg-[#071f15] text-[#0A3D2E] dark:text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform" title="Wishlist">
-          <Heart className="w-5 h-5" />
-        </Link>
-        <Link to="/chat" className="w-12 h-12 rounded-full bg-[#0A3D2E] dark:bg-[#22C55E] text-white dark:text-[#051510] flex items-center justify-center shadow-lg hover:scale-110 transition-transform" title="Chat">
-          <MessageCircle className="w-5 h-5" />
-        </Link>
-      </div>
     </div>
   );
 }
