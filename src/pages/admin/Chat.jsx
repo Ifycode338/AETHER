@@ -14,8 +14,11 @@ export default function Chat() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showQuickReplies, setShowQuickReplies] = useState(false);
+  const [customerTyping, setCustomerTyping] = useState(false);
   const scrollRef = useRef(null);
   const channelRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const customerTypingTimeoutRef = useRef(null);
 
   const quickReplies = [
     "Thank you for reaching out! How can I help you today?",
@@ -121,7 +124,24 @@ export default function Chat() {
     if (!conversationId) return;
 
     const channel = supabase
-      .channel(`admin_chat_messages_${conversationId}`)
+      .channel(`chat_${conversationId}`)
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.sender_role !== 'customer') return;
+
+        if (customerTypingTimeoutRef.current) {
+          clearTimeout(customerTypingTimeoutRef.current);
+          customerTypingTimeoutRef.current = null;
+        }
+
+        const isTyping = Boolean(payload.is_typing);
+        setCustomerTyping(isTyping);
+        if (isTyping) {
+          customerTypingTimeoutRef.current = setTimeout(() => {
+            setCustomerTyping(false);
+            customerTypingTimeoutRef.current = null;
+          }, 3000);
+        }
+      })
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
@@ -163,6 +183,51 @@ export default function Chat() {
       }
     };
   }, [selected?.id, selected?.status]);
+
+  const sendTypingStatus = useCallback((isTyping) => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
+    const channel = channelRef.current;
+    if (!channel) return;
+
+    const broadcastTyping = (typing) => {
+      channel.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { sender_role: 'admin', is_typing: typing },
+      }).then((status) => {
+        if (status !== 'ok') {
+          console.error('Failed to broadcast admin typing status:', status);
+        }
+      }).catch((error) => {
+        console.error('Failed to broadcast admin typing status:', error);
+      });
+    };
+
+    broadcastTyping(isTyping);
+    if (isTyping) {
+      typingTimeoutRef.current = setTimeout(() => {
+        broadcastTyping(false);
+        typingTimeoutRef.current = null;
+      }, 1200);
+    }
+  }, []);
+
+  useEffect(() => {
+    setCustomerTyping(false);
+    if (customerTypingTimeoutRef.current) {
+      clearTimeout(customerTypingTimeoutRef.current);
+      customerTypingTimeoutRef.current = null;
+    }
+  }, [selected?.id]);
+
+  useEffect(() => () => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    if (customerTypingTimeoutRef.current) clearTimeout(customerTypingTimeoutRef.current);
+  }, []);
 
   // Initial load and subscriptions
   useEffect(() => {
@@ -207,6 +272,7 @@ export default function Chat() {
     const messageText = text.trim();
     setText("");
     setShowQuickReplies(false);
+    sendTypingStatus(false);
     
     try {
       const { data: msg, error } = await supabase
@@ -247,7 +313,7 @@ export default function Chat() {
     } catch (error) {
       console.error('Error in send:', error);
     }
-  }, [text, selected, loadConversations]);
+  }, [text, selected, loadConversations, sendTypingStatus]);
 
   const closeConversation = useCallback(async () => {
     if (!selected?.id) return;
@@ -484,6 +550,13 @@ export default function Chat() {
               </div>
               <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#051510]">
                 {messages.map((m) => renderMessage(m))}
+                {customerTyping && (
+                  <div className="flex justify-start">
+                    <div className="px-4 py-2 rounded-2xl rounded-bl-md bg-[#E2F1E7]/10 text-white/50 text-xs">
+                      Customer is typing…
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="p-3 border-t border-[#22C55E]/10">
                 {showQuickReplies && (
@@ -513,7 +586,10 @@ export default function Chat() {
                   </button>
                   <input
                     value={text}
-                    onChange={(e) => setText(e.target.value)}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                      sendTypingStatus(Boolean(e.target.value.trim()));
+                    }}
                     placeholder="Reply to customer…"
                     className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#051510] border border-[#22C55E]/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E] placeholder-white/30"
                     disabled={selected?.status === 'closed'}
