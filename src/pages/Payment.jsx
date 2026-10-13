@@ -22,6 +22,7 @@ export default function Payment() {
   const [error, setError] = useState(null);
   const [paymentAttempt, setPaymentAttempt] = useState(null);
   const [paymentNotice, setPaymentNotice] = useState("");
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const processingRef = useRef(false);
   const finalizingPaymentRef = useRef(false);
   const verificationStartedRef = useRef(null);
@@ -152,6 +153,7 @@ export default function Payment() {
         throw new Error("The confirmed payment details do not match this order.");
       }
 
+      setPaymentConfirmed(true);
       if (finalizingPaymentRef.current) return;
       finalizingPaymentRef.current = true;
       await createOrder({ reference });
@@ -333,11 +335,13 @@ export default function Payment() {
 
     } catch (err) {
       console.error('Error creating order:', err);
-      setError(err.message || 'Failed to create order. Please try again.');
+      setPaymentNotice(
+        `Paystack confirmed your payment, but we could not finish saving the order. Do not pay again. Keep payment reference ${paymentResponse.reference} and retry order confirmation below.`
+      );
       processingRef.current = false;
       finalizingPaymentRef.current = false;
       setProcessing(false);
-      toast.error('Failed to create order');
+      toast.error('Payment received; order confirmation needs a retry');
     }
   };
 
@@ -442,7 +446,7 @@ export default function Payment() {
 
         <Button
           onClick={startOrResumePayment}
-          disabled={processing}
+          disabled={processing || paymentConfirmed}
           className="w-full bg-[#22C55E] text-[#051510] hover:bg-[#16a34a] font-semibold h-14 rounded-xl"
         >
           {processing ? (
@@ -451,7 +455,11 @@ export default function Payment() {
               Processing...
             </>
           ) : (
-            paymentAttempt ? "Continue bank transfer" : `Pay ₦${orderData?.total?.toFixed(2)}`
+            paymentConfirmed
+              ? "Payment received"
+              : paymentAttempt
+                ? "Continue bank transfer"
+                : `Pay ₦${orderData?.total?.toFixed(2)}`
           )}
         </Button>
 
@@ -462,7 +470,7 @@ export default function Payment() {
             disabled={processing}
             className="w-full mt-3"
           >
-            Check transfer status
+            {paymentConfirmed ? "Retry order confirmation" : "Check transfer status"}
           </Button>
         )}
 
