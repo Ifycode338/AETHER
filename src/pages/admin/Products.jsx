@@ -554,23 +554,35 @@ function ProductForm({ product, onClose, onSaved }) {
 
   const handleVideoUpload = async (file) => {
     if (!file) return;
-    
+
+    // Validate file type
+    if (!file.type.startsWith('video/')) {
+      alert('Please select a video file');
+      return;
+    }
+
+    // Validate file size (1GB limit)
+    if (file.size > 1024 * 1024 * 1024) {
+      alert('Video size must be less than 1GB');
+      return;
+    }
+
     setUploadingVideo(true);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `product-videos/${fileName}`;
-      
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('product-videos')
         .upload(filePath, file);
-      
+
       if (uploadError) throw uploadError;
-      
+
       const { data: { publicUrl } } = supabase.storage
         .from('product-videos')
         .getPublicUrl(filePath);
-      
+
       setForm(f => ({ ...f, video_url: publicUrl }));
     } catch (error) {
       console.error('Error uploading video:', error);
@@ -869,7 +881,7 @@ function ProductForm({ product, onClose, onSaved }) {
                 <p className="text-xs sm:text-sm text-white/60 mb-1">
                   {uploadingVideo ? "Uploading video..." : "Upload product video"}
                 </p>
-                <p className="text-xs text-white/40">Supports MP4, WebM, and other video formats</p>
+                <p className="text-xs text-white/40">Supports MP4, WebM, and other video formats (max 1GB)</p>
               </div>
             )}
           </div>
